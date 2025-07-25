@@ -1,5 +1,5 @@
 // components/PostCard.js
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/utils/api";
 
 export default function PostCard({ post }) {
@@ -7,6 +7,7 @@ export default function PostCard({ post }) {
   const [comments, setComments] = useState(post.comments || []);
   const [likes, setLikes] = useState(post.likes?.length || 0);
   const [liked, setLiked] = useState(false);
+  const [isCommenting, setIsCommenting] = useState(false);
 
   const handleLike = async () => {
     try {
@@ -21,7 +22,10 @@ export default function PostCard({ post }) {
   };
 
   const handleComment = async () => {
+    if (!commentText.trim()) return;
+    
     try {
+      setIsCommenting(true);
       const res = await api.post("comments/", {
         post: post.id,
         content: commentText,
@@ -30,49 +34,79 @@ export default function PostCard({ post }) {
       setCommentText("");
     } catch (err) {
       console.error("Comment error:", err);
+    } finally {
+      setIsCommenting(false);
     }
   };
 
   return (
-    <div className="border rounded-md p-4 my-4">
-      <h2 className="font-bold">{post.title}</h2>
-      <p>{post.content}</p>
-      <p className="text-sm text-gray-500">By: {post.author?.username}</p>
+    <div className="bg-white shadow sm:rounded-lg overflow-hidden mb-6">
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">{post.title}</h2>
+          <span className="text-xs text-gray-500">
+            {new Date(post.created_at).toLocaleDateString()}
+          </span>
+        </div>
+        
+        <p className="mt-2 text-gray-700">{post.content}</p>
+        
+        <div className="mt-3 flex items-center text-sm text-gray-500">
+          <span>Posted by </span>
+          <span className="ml-1 font-medium text-gray-600">
+            {post.author?.username}
+          </span>
+        </div>
 
-      <div className="mt-2">
-        <button
-          className={`px-2 py-1 text-sm border rounded ${
-            liked ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={handleLike}
-          disabled={liked}
-        >
-          👍 Like ({likes})
-        </button>
+        <div className="mt-4 flex items-center space-x-4">
+          <button
+            onClick={handleLike}
+            disabled={liked}
+            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white ${
+              liked ? "bg-blue-600" : "bg-blue-500 hover:bg-blue-600"
+            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+          >
+            👍 Like ({likes})
+          </button>
+        </div>
       </div>
 
-      <div className="mt-4">
-        <input
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          className="border px-2 py-1 w-full rounded"
-          placeholder="Write a comment..."
-        />
-        <button
-          onClick={handleComment}
-          className="mt-2 px-3 py-1 bg-green-500 text-white rounded"
-        >
-          Post Comment
-        </button>
-
-        <div className="mt-4">
-          <h4 className="font-semibold">Comments:</h4>
-          {comments.map((c) => (
-            <div key={c.id} className="border-t py-1 text-sm">
-              <strong>{c.user?.username}:</strong> {c.content}
-            </div>
-          ))}
+      <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+        <div className="flex space-x-2">
+          <input
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Write a comment..."
+          />
+          <button
+            onClick={handleComment}
+            disabled={!commentText.trim() || isCommenting}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCommenting ? 'Posting...' : 'Post'}
+          </button>
         </div>
+
+        {comments.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <h4 className="text-sm font-medium text-gray-700">Comments:</h4>
+            {comments.map((c) => (
+              <div key={c.id} className="bg-white p-3 rounded-md shadow-xs border border-gray-100">
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-800">
+                    {c.user?.username}
+                  </span>
+                  <span className="mx-1 text-gray-400">·</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(c.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-600">{c.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
