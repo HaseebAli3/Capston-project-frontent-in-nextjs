@@ -3,80 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import api from "../utils/api";
-
-const PostCard = ({ post }) => {
-  const [visibleComments, setVisibleComments] = useState(2);
-  const [expanded, setExpanded] = useState(false);
-
-  // Safely format user information
-  const formatUser = (user) => {
-    if (!user) return "Unknown";
-    if (typeof user === "string") return user;
-    if (typeof user === "object") return user.username || user.name || "Unknown";
-    return "Unknown";
-  };
-
-  // Safely get and format comments
-  const comments = Array.isArray(post?.comments) 
-    ? post.comments.map(comment => ({
-        id: comment?.id || Math.random().toString(36).substring(2, 9),
-        author: formatUser(comment?.user || comment?.author),
-        content: comment?.content || comment?.text || "[No content]",
-        date: comment?.createdAt ? new Date(comment.createdAt) : new Date()
-      }))
-    : [];
-
-  const toggleComments = () => {
-    setExpanded(!expanded);
-    setVisibleComments(expanded ? 2 : comments.length);
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2">{post?.title || "Untitled Post"}</h3>
-        <p className="text-gray-600 mb-4">{post?.content || post?.body || ""}</p>
-        
-        <div className="flex items-center text-sm text-gray-500 mb-3">
-          <span>Posted by {formatUser(post?.user || post?.author)}</span>
-          <span className="mx-2">•</span>
-          <span>
-            {post?.createdAt ? new Date(post.createdAt).toLocaleDateString() : "Unknown date"}
-          </span>
-        </div>
-      </div>
-
-      {comments.length > 0 && (
-        <div className="border-t border-gray-100 px-4 py-3 bg-gray-50">
-          <h4 className="font-medium text-gray-700 mb-2">
-            Comments ({comments.length})
-          </h4>
-          
-          <div className="space-y-3 mb-3">
-            {comments.slice(0, visibleComments).map((comment) => (
-              <div key={comment.id} className="text-sm">
-                <div className="font-medium text-gray-800">{comment.author}</div>
-                <p className="text-gray-600">{comment.content}</p>
-                <div className="text-xs text-gray-400 mt-1">
-                  {comment.date.toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {comments.length > 2 && (
-            <button
-              onClick={toggleComments}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {expanded ? 'Show less' : `View all ${comments.length} comments`}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
+import PostCard from "../components/PostCard";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -104,19 +31,7 @@ export default function Home() {
       setIsLoading(true);
       setError("");
       const response = await api.get("posts/");
-      
-      // Format posts data with proper user handling
-      const formattedPosts = response.data.map(post => ({
-        id: post?.id || Math.random().toString(36).substring(2, 9),
-        title: post?.title || "Untitled Post",
-        content: post?.content || post?.body || "",
-        user: post?.user, // Keep user object as is
-        author: post?.author, // Keep for backward compatibility
-        createdAt: post?.createdAt,
-        comments: Array.isArray(post?.comments) ? post.comments : []
-      }));
-      
-      setPosts(formattedPosts);
+      setPosts(response.data);
     } catch (err) {
       console.error("Error fetching posts:", err);
       setError("Failed to load posts. Please try again.");
