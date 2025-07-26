@@ -44,6 +44,13 @@ export default function PostCard({ post }) {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">{post.title}</h2>
+          {post.image && (
+  <img
+    src={post.image}
+    alt="Post"
+    className="mt-3 w-full h-64 object-cover rounded-md"
+  />
+)}
           <span className="text-xs text-gray-500">
             {new Date(post.created_at).toLocaleDateString()}
           </span>
